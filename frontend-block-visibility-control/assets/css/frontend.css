@@ -1,0 +1,22 @@
+/* Frontend Block Visibility Control - Responsive Breakpoint Utility Classes */
+
+/* Hide on Desktop ( > 1024px ) */
+@media screen and (min-width: 1025px) {
+	.fbv-hide-desktop {
+		display: none !important;
+	}
+}
+
+/* Hide on Tablet ( 768px - 1024px ) */
+@media screen and (min-width: 768px) and (max-width: 1024px) {
+	.fbv-hide-tablet {
+		display: none !important;
+	}
+}
+
+/* Hide on Mobile ( < 768px ) */
+@media screen and (max-width: 767px) {
+	.fbv-hide-mobile {
+		display: none !important;
+	}
+}
