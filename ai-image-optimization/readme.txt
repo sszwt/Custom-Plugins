@@ -1,5 +1,5 @@
 === AI Image Optimization ===
-Contributors: medgrowth
+Contributors: custom-plugin
 Tags: images, optimization, webp, compression, ai, performance
 Requires at least: 5.8
 Tested up to: 6.8

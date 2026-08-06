@@ -6,7 +6,8 @@
  * Version:           1.0.9
  * Requires at least: 6.0
  * Requires PHP:      7.4
- * Author:            AI ACF Block Generator
+ * Author:            Custom Plugin
+ * Author URI:        https://github.com/sszwt/Custom-Plugins
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       ai-acf-block-generator

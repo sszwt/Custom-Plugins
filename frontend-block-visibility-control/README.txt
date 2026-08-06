@@ -1,5 +1,5 @@
 === Frontend Block Visibility Control ===
-Contributors: medgrowth
+Contributors: custom-plugin
 Tags: block visibility, gutenberg, hide blocks, acf
 Requires at least: 5.8
 Tested up to: 6.7

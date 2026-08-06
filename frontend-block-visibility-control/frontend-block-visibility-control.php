@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name: Frontend Block Visibility Control
- * Plugin URI:  https://medgrowth.in
+ * Plugin URI:  https://github.com/sszwt/Custom-Plugins
  * Description: Hide Gutenberg blocks and ACF fields on the live site — toolbar eye, field controls, and site-wide block-type bans.
  * Version:     1.4.0
- * Author:      Medgrowth
- * Author URI:  https://medgrowth.in
+ * Author:      Custom Plugin
+ * Author URI:  https://github.com/sszwt/Custom-Plugins
  * License:     GPL-2.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: frontend-block-visibility-control

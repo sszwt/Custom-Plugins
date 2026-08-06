@@ -4,7 +4,7 @@
  * Plugin URI:        https://example.com/ai-image-alt-text-generator
  * Description:       Automatically generate accessible ALT text for images in the Media Library using AI vision.
  * Version:           1.1.2
- * Author:            Medgrowth
+ * Author:            Custom Plugin
  * License:           GPL-2.0-or-later
  * Text Domain:       ai-image-alt-text-generator
  */

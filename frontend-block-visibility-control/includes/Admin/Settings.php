@@ -162,7 +162,7 @@ class Settings {
 
 					<div class="fbv-rail__foot">
 						<span><?php echo esc_html( 'v' . FBV_CONTROL_VERSION ); ?></span>
-						<span><?php esc_html_e( 'Medgrowth', 'frontend-block-visibility-control' ); ?></span>
+						<span><?php esc_html_e( 'Custom Plugin', 'frontend-block-visibility-control' ); ?></span>
 					</div>
 				</aside>
 

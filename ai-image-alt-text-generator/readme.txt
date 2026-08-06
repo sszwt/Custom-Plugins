@@ -1,5 +1,5 @@
 === AI Image ALT Text Generator ===
-Contributors: medgrowth
+Contributors: custom-plugin
 Tags: alt text, accessibility, ai, images, seo, gemini, openai
 Requires at least: 5.8
 Tested up to: 6.8

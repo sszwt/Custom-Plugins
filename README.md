@@ -1,6 +1,6 @@
 ﻿# Custom Plugins
 
-Medgrowth WordPress custom plugins (source folders).
+WordPress custom plugins (source folders).
 
 ## Included
 
@@ -17,3 +17,5 @@ Medgrowth WordPress custom plugins (source folders).
 2. Activate it under **Plugins** in WordPress admin.
 
 > Advanced Custom Fields Pro is not included (commercial / separate).
+
+**Author:** Custom Plugin

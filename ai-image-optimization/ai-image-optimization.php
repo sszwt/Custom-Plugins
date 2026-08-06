@@ -4,7 +4,7 @@
  * Plugin URI:        https://example.com/ai-image-optimization
  * Description:       Standardize images for speed, SEO & accessibility: WebP/JPG/PNG delivery (Media untouched), ALT text, lazy-load, dimensions, and compression.
  * Version:           1.2.3
- * Author:            Medgrowth
+ * Author:            Custom Plugin
  * License:           GPL-2.0-or-later
  * Text Domain:       ai-image-optimization
  */
