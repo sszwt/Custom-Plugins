@@ -288,8 +288,14 @@ class Block_Generator {
 			return new \WP_Error( 'missing_name', __( 'Title is required.', 'ai-acf-block-generator' ) );
 		}
 
+		$has_image = ! empty( $input['design_image']['tmp_name'] ) && (int) ( $input['design_image']['error'] ?? UPLOAD_ERR_NO_FILE ) === UPLOAD_ERR_OK;
+
+		if ( empty( $prompt ) && ! $has_image ) {
+			return new \WP_Error( 'missing_prompt', __( 'Prompt or design image is required.', 'ai-acf-block-generator' ) );
+		}
+
 		if ( empty( $prompt ) ) {
-			return new \WP_Error( 'missing_prompt', __( 'Prompt is required.', 'ai-acf-block-generator' ) );
+			$prompt = 'Analyze the uploaded design mockup. Create ACF fields for every visible element: headings, body text, buttons, images, icons, and repeaters for cards/slides. Match the exact layout, colors, and spacing. OCR all visible text into default_value fields.';
 		}
 
 		if ( empty( $slug ) ) {

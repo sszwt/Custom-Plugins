@@ -3,7 +3,7 @@
  * Plugin Name:       AI ACF Block Generator
  * Plugin URI:        https://example.com/ai-acf-block-generator
  * Description:       Generate complete ACF Gutenberg Blocks from natural language prompts using AI.
- * Version:           1.0.9
+ * Version:           1.1.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Custom Plugin
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'AABG_VERSION', '1.0.9' );
+define( 'AABG_VERSION', '1.1.0' );
 define( 'AABG_PLUGIN_FILE', __FILE__ );
 define( 'AABG_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AABG_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

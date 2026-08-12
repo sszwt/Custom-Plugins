@@ -197,6 +197,20 @@ class Rule_Based_Analyzer {
 			$used_case_study = false;
 		}
 
+		// CTA / banner / webinar speaker pattern.
+		$wants_cta = (
+			false !== stripos( $prompt, 'webinar' )
+			|| false !== stripos( $prompt, 'speaker' )
+			|| false !== stripos( $prompt, 'call to action' )
+			|| false !== stripos( $prompt, 'cta' )
+			|| ( false !== stripos( $prompt, 'banner' ) && false === stripos( $prompt, 'hero' ) )
+		) && false === stripos( $prompt, 'slider' ) && false === stripos( $prompt, 'carousel' );
+
+		if ( $wants_cta && false === stripos( $prompt, 'testimonial' ) && false === stripos( $prompt, 'team' ) ) {
+			$fields = $this->build_cta_fields( $prefix );
+			$layout = 'cta';
+		}
+
 		// Hero pattern.
 		if ( false !== stripos( $prompt, 'hero' ) ) {
 			$fields = $this->merge_fields( $fields, $this->build_hero_fields( $prefix ) );
@@ -364,7 +378,16 @@ class Rule_Based_Analyzer {
 	 * @return array|null
 	 */
 	private function match_field( $line, $prefix, $seen ) {
-		foreach ( $this->type_map as $keyword => $type ) {
+		$keywords = array_keys( $this->type_map );
+		usort(
+			$keywords,
+			static function ( $a, $b ) {
+				return strlen( $b ) - strlen( $a );
+			}
+		);
+
+		foreach ( $keywords as $keyword ) {
+			$type = $this->type_map[ $keyword ];
 			if ( false !== strpos( $line, $keyword ) ) {
 				$name = Sanitizer::field_name( str_replace( ' ', '_', $keyword ) );
 
@@ -433,6 +456,21 @@ class Rule_Based_Analyzer {
 			array( 'label' => 'Primary Button', 'name' => $prefix . '_primary_button', 'type' => 'link' ),
 			array( 'label' => 'Secondary Button', 'name' => $prefix . '_secondary_button', 'type' => 'link' ),
 			array( 'label' => 'Side Image', 'name' => $prefix . '_side_image', 'type' => 'image' ),
+		);
+	}
+
+	/**
+	 * CTA / banner two-column fields.
+	 *
+	 * @param string $prefix Prefix.
+	 * @return array
+	 */
+	private function build_cta_fields( $prefix ) {
+		return array(
+			array( 'label' => 'Illustration / Image', 'name' => $prefix . '_illustration', 'type' => 'image' ),
+			array( 'label' => 'Title', 'name' => $prefix . '_title', 'type' => 'text' ),
+			array( 'label' => 'Description', 'name' => $prefix . '_description', 'type' => 'textarea', 'new_lines' => 'br' ),
+			array( 'label' => 'Button', 'name' => $prefix . '_button', 'type' => 'link' ),
 		);
 	}
 

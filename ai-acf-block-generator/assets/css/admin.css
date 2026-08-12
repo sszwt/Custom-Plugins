@@ -553,6 +553,43 @@
 	font-family: "SFMono-Regular", Consolas, Menlo, monospace;
 }
 
+.aabg-fields-list {
+	margin: 16px 0;
+	padding: 16px 18px;
+	background: var(--aabg-bg);
+	border: 1px solid var(--aabg-border);
+	border-radius: var(--aabg-radius-sm);
+}
+
+.aabg-fields-list h3 {
+	margin: 0 0 10px;
+	font-size: 15px;
+}
+
+.aabg-field-tree {
+	margin: 0;
+	padding-left: 18px;
+}
+
+.aabg-field-tree li {
+	margin: 6px 0;
+	font-size: 13px;
+	line-height: 1.45;
+	color: var(--aabg-ink);
+}
+
+.aabg-field-tree code {
+	font-size: 11px;
+	background: #fff;
+	padding: 1px 6px;
+	border-radius: 4px;
+	border: 1px solid var(--aabg-border);
+}
+
+.aabg-field-tree--nested {
+	margin-top: 6px;
+}
+
 /* ---------- Tips ---------- */
 .aabg-tips {
 	background: linear-gradient(180deg, #ffffff 0%, #fbfbff 100%);

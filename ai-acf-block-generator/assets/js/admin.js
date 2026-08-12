@@ -80,7 +80,6 @@
 					.done( function ( response ) {
 						if ( response.success ) {
 							self.showResult( response.data );
-							self.loadPreview( response.data.preview_url );
 						} else {
 							self.showError( response.data?.message || aabgAdmin.i18n.error );
 						}
@@ -262,10 +261,19 @@
 			var $result = $( '#aabg-result' );
 			$result.removeClass( 'aabg-hidden' );
 
+			var layout = data.spec?.layout || data.manifest?.layout || 'content';
+			var source = data.spec?.source || data.manifest?.source || '';
+			var enriched = data.spec?.enriched ? ' · enriched: ' + data.spec.enriched : '';
+
 			$( '#aabg-result-message' ).html(
 				'<div class="aabg-result-success">' + ( data.message || aabgAdmin.i18n.success ) + '</div>'
+				+ '<p class="description"><strong>Layout:</strong> ' + layout
+				+ ( source ? ' · <strong>Source:</strong> ' + source + enriched : '' )
+				+ '</p>'
 				+ ( data.warning ? '<div class="aabg-notice aabg-notice--warning">' + data.warning + '</div>' : '' )
 			);
+
+			this.renderFieldsList( data.spec?.fields || data.manifest?.fields || [] );
 
 			// Suggestions
 			var $suggestions = $( '#aabg-suggestions' ).empty();
@@ -298,8 +306,48 @@
 			if ( data.build_note ) {
 				$files.append( '<p class="description"><strong>Note:</strong> ' + data.build_note + '</p>' );
 			}
+		},
 
-			$( '#aabg-preview-panel' ).removeClass( 'aabg-hidden' );
+		renderFieldsList: function ( fields, depth ) {
+			depth = depth || 0;
+			var $wrap = $( '#aabg-fields-list' );
+
+			if ( ! depth ) {
+				$wrap.empty();
+				if ( ! fields || ! fields.length ) {
+					return;
+				}
+				$wrap.append( '<h3>Generated ACF Fields</h3>' );
+			}
+
+			var $ul = $( '<ul class="aabg-field-tree' + ( depth ? ' aabg-field-tree--nested' : '' ) + '"></ul>' );
+
+			fields.forEach( function ( field ) {
+				var type = field.type || 'text';
+				var label = field.label || field.name || 'Field';
+				var name = field.name ? ' <code>' + field.name + '</code>' : '';
+				var def = field.default_value ? ' — <em>' + ( typeof field.default_value === 'object' ? JSON.stringify( field.default_value ) : field.default_value ) + '</em>' : '';
+				var $li = $( '<li><strong>' + label + '</strong> (' + type + ')' + name + def + '</li>' );
+
+				if ( field.sub_fields && field.sub_fields.length ) {
+					var $nested = $( '<ul class="aabg-field-tree aabg-field-tree--nested"></ul>' );
+					field.sub_fields.forEach( function ( sub ) {
+						var st = sub.type || 'text';
+						var sl = sub.label || sub.name || 'Sub-field';
+						var sn = sub.name ? ' <code>' + sub.name + '</code>' : '';
+						$nested.append( '<li>' + sl + ' (' + st + ')' + sn + '</li>' );
+					} );
+					$li.append( $nested );
+				}
+
+				$ul.append( $li );
+			} );
+
+			if ( depth ) {
+				return $ul;
+			}
+
+			$wrap.append( $ul );
 		},
 
 		showError: function ( message ) {

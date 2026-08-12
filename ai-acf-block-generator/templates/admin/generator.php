@@ -50,8 +50,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</div>
 
 				<div class="aabg-field">
-					<label for="aabg-prompt"><?php esc_html_e( 'Prompt', 'ai-acf-block-generator' ); ?> <span class="required">*</span></label>
-					<textarea id="aabg-prompt" name="prompt" rows="10" required placeholder="<?php esc_attr_e( "Create a Hero section with:\nBackground image\nTitle\nSubtitle\nDescription\nPrimary button\nSecondary button\nTwo-column layout\nImage on right side\nResponsive design", 'ai-acf-block-generator' ); ?>"></textarea>
+					<label for="aabg-prompt"><?php esc_html_e( 'Prompt', 'ai-acf-block-generator' ); ?></label>
+					<textarea id="aabg-prompt" name="prompt" rows="10" placeholder="<?php esc_attr_e( "Optional if you upload a design image.\n\nExample:\nCreate this section exactly as shown.\nTitle\nDescription\nButton\nIllustration image\nTwo-column layout", 'ai-acf-block-generator' ); ?>"></textarea>
+					<p class="description"><?php esc_html_e( 'Describe fields and layout, or rely on the design image with Vision AI (Gemini/OpenAI key required).', 'ai-acf-block-generator' ); ?></p>
 				</div>
 
 				<div class="aabg-actions">
@@ -65,30 +66,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<div id="aabg-result" class="aabg-card aabg-hidden">
 				<h2><?php esc_html_e( 'Generation Result', 'ai-acf-block-generator' ); ?></h2>
 				<div id="aabg-result-message"></div>
+				<div id="aabg-fields-list" class="aabg-fields-list"></div>
 				<div id="aabg-suggestions" class="aabg-suggestions"></div>
 				<div id="aabg-files-list" class="aabg-files-list"></div>
 			</div>
 		</div>
 
 		<div class="aabg-sidebar">
-			<div class="aabg-card aabg-preview-card aabg-hidden" id="aabg-preview-panel">
-				<h3><?php esc_html_e( 'Live Preview', 'ai-acf-block-generator' ); ?></h3>
-				<div class="aabg-device-switcher">
-					<button type="button" class="aabg-device-btn active" data-device="desktop" title="<?php esc_attr_e( 'Desktop', 'ai-acf-block-generator' ); ?>">
-						<span class="dashicons dashicons-desktop"></span>
-					</button>
-					<button type="button" class="aabg-device-btn" data-device="tablet" title="<?php esc_attr_e( 'Tablet', 'ai-acf-block-generator' ); ?>">
-						<span class="dashicons dashicons-tablet"></span>
-					</button>
-					<button type="button" class="aabg-device-btn" data-device="mobile" title="<?php esc_attr_e( 'Mobile', 'ai-acf-block-generator' ); ?>">
-						<span class="dashicons dashicons-smartphone"></span>
-					</button>
-				</div>
-				<div class="aabg-preview-frame-wrap" data-device="desktop">
-					<iframe id="aabg-preview-frame" class="aabg-preview-frame" title="<?php esc_attr_e( 'Block Preview', 'ai-acf-block-generator' ); ?>"></iframe>
-				</div>
-			</div>
-
 			<div class="aabg-card aabg-tips">
 				<h3><?php esc_html_e( 'Prompt Tips', 'ai-acf-block-generator' ); ?></h3>
 				<ul>

@@ -124,7 +124,7 @@ Use semantic, snake_case, prefixed field names. Include slider settings (autopla
 	 * @return string
 	 */
 	protected function get_vision_user_preamble() {
-		return 'Analyze this design mockup carefully. Replicate the EXACT visual design: row/column structure using theme grid classes (row, cell-md-6, cell-md-4, cell-12), exact hex colors, spacing, typography, and field positions. Map every visible UI element to an ACF field — headings, body copy, bullet/focus lists, slide counters (01/04), images, and icons. If the mockup is a slider/carousel/case-study section, return layout "slider" with a slides repeater (image, slide_number, title, description, focus_heading, focus_areas nested repeater). Do NOT return only Autoplay/Navigation/Animation/Color toggles. Return layout_structure with grid_system "theme". Extract design_tokens from the image colors. ';
+		return 'Analyze this design mockup pixel-by-pixel. STEP 1: List every visible UI element (headings, paragraphs, buttons, images, icons, cards, list items). STEP 2: OCR all readable text into default_value on each field. STEP 3: Choose layout: hero|two-column|cta|grid|team|testimonial|slider|content. STEP 4: Create ACF fields for ALL content — never return only toggles/settings. Use repeaters for repeated cards/slides/members. Use two-column (cell-md-6 + cell-md-6) when text and image sit side-by-side. Use layout "cta" for banner sections with headline + button + illustration. Use layout "slider" ONLY when the design shows carousel/slider UI. Return layout_structure with grid_system "theme" and design_tokens from the image. Put sample copy in default_value and placeholder_content. ';
 	}
 
 	/**
@@ -174,9 +174,14 @@ Use semantic, snake_case, prefixed field names. Include slider settings (autopla
 		$parsed['bem_block'] = \AABG\Utils\Sanitizer::block_slug( $parsed['bem_block'] );
 		$parsed['fields']    = $this->sanitize_field_tree( $parsed['fields'] );
 
+		$prefix = \AABG\Utils\Slug_Helper::field_prefix( $parsed['block_slug'] ?? ( $block_config['slug'] ?? 'custom-block' ) );
+		$parsed['fields'] = $this->apply_field_prefix( $parsed['fields'], $prefix );
+
 		$parsed = $this->enrich_sparse_content_spec( $parsed, $block_config, $prompt );
 
 		$parsed['fields'] = $this->sanitize_field_tree( $parsed['fields'] ?? array() );
+		$parsed['fields'] = $this->apply_field_prefix( $parsed['fields'], $prefix );
+		$parsed['fields'] = $this->apply_default_values_from_placeholders( $parsed['fields'], $parsed['placeholder_content'] ?? array() );
 
 		if ( empty( $parsed['layout_structure'] ) ) {
 			$parsed['layout_structure'] = $this->infer_layout_structure( $parsed );
@@ -280,77 +285,434 @@ Use semantic, snake_case, prefixed field names. Include slider settings (autopla
 	 */
 	protected function enrich_sparse_content_spec( $parsed, $block_config, $prompt = '' ) {
 		$fields = $parsed['fields'] ?? array();
-		$layout = strtolower( (string) ( $parsed['layout'] ?? 'content' ) );
-		$js     = strtolower( (string) ( $parsed['javascript_type'] ?? '' ) );
 		$slug   = $block_config['slug'] ?? ( $parsed['block_slug'] ?? 'custom-block' );
 		$prefix = \AABG\Utils\Slug_Helper::field_prefix( $slug );
 
-		$prompt_l = strtolower( $prompt . ' ' . ( $parsed['purpose'] ?? '' ) . ' ' . ( $parsed['layout_details'] ?? '' ) . ' ' . ( $block_config['name'] ?? '' ) . ' ' . ( $block_config['description'] ?? '' ) );
-
-		$wants_slider = in_array( $layout, array( 'slider', 'carousel' ), true )
-			|| 'slider' === $js
-			|| false !== strpos( $prompt_l, 'swiper' )
-			|| false !== strpos( $prompt_l, 'slider' )
-			|| false !== strpos( $prompt_l, 'carousel' )
-			|| false !== strpos( $prompt_l, 'case study' )
-			|| false !== strpos( $prompt_l, 'focus area' );
-
 		if ( ! $this->is_content_sparse( $fields ) ) {
-			// Still ensure nested bullet lists exist when prompt asks for focus areas.
-			if ( $wants_slider && ( false !== strpos( $prompt_l, 'focus' ) || false !== strpos( $prompt_l, 'bullet' ) ) ) {
+			$intent = $this->detect_layout_intent( $parsed, $block_config, $prompt );
+			if ( 'slider' === $intent ) {
 				$parsed['fields'] = $this->ensure_focus_areas_on_slides( $fields );
 			}
 			return $parsed;
 		}
 
-		if ( ! $wants_slider && ! $this->looks_like_image_text_section( $fields, $prompt_l ) ) {
-			return $parsed;
-		}
+		$intent = $this->detect_layout_intent( $parsed, $block_config, $prompt );
 
-		$parsed['layout']           = 'slider';
-		$parsed['needs_javascript'] = true;
-		$parsed['javascript_type']  = 'slider';
-		$parsed['fields']           = $this->build_case_study_slider_fields( $prefix );
-		$parsed['layout_details']   = $parsed['layout_details'] ?? 'Two-column case-study Swiper: image left, content + focus list right.';
-		$parsed['css_notes']        = $parsed['css_notes'] ?? 'Dark navy section, white typography, green focus icons, responsive Swiper.';
+		switch ( $intent ) {
+			case 'slider':
+				$parsed['layout']           = 'slider';
+				$parsed['needs_javascript'] = true;
+				$parsed['javascript_type']  = 'slider';
+				$parsed['fields']           = $this->build_case_study_slider_fields( $prefix );
+				$parsed['layout_structure'] = $this->build_full_width_structure( $prefix . '_slides' );
+				$parsed['enriched']         = 'case_study_slider';
+				break;
+
+			case 'team':
+				$parsed['layout']           = 'team';
+				$parsed['needs_javascript'] = true;
+				$parsed['javascript_type']  = 'slider';
+				$parsed['fields']           = $this->build_team_mosaic_fields( $prefix );
+				$parsed['layout_structure'] = $this->build_full_width_structure( $prefix . '_team_members' );
+				$parsed['enriched']         = 'team_mosaic';
+				break;
+
+			case 'grid':
+				$parsed['layout']           = 'grid';
+				$parsed['fields']           = $this->build_grid_cards_fields( $prefix );
+				$parsed['layout_structure'] = $this->build_full_width_structure( $prefix . '_cards' );
+				$parsed['enriched']         = 'grid_cards';
+				break;
+
+			case 'cta':
+				$parsed['layout']           = 'cta';
+				$parsed['fields']           = $this->build_cta_two_column_fields( $prefix );
+				$parsed['layout_structure'] = $this->build_two_column_structure(
+					array( $prefix . '_illustration' ),
+					array( $prefix . '_title', $prefix . '_description', $prefix . '_button' )
+				);
+				$parsed['enriched']         = 'cta_two_column';
+				break;
+
+			case 'hero':
+				$parsed['layout']           = 'hero';
+				$parsed['fields']           = $this->build_hero_content_fields( $prefix );
+				$parsed['layout_structure'] = $this->build_two_column_structure(
+					array( $prefix . '_title', $prefix . '_subtitle', $prefix . '_description', $prefix . '_primary_button' ),
+					array( $prefix . '_side_image' )
+				);
+				$parsed['enriched']         = 'hero';
+				break;
+
+			case 'two-column':
+			default:
+				$parsed['layout']           = 'two-column';
+				$parsed['fields']           = $this->build_two_column_content_fields( $prefix );
+				$parsed['layout_structure'] = $this->build_two_column_structure(
+					array( $prefix . '_title', $prefix . '_description', $prefix . '_button' ),
+					array( $prefix . '_image' )
+				);
+				$parsed['enriched']         = 'two_column';
+				break;
+		}
 
 		if ( empty( $parsed['design_tokens'] ) || ! is_array( $parsed['design_tokens'] ) ) {
 			$parsed['design_tokens'] = array();
 		}
-		$parsed['design_tokens'] = array_merge(
-			array(
-				'primary_color'     => '#32CD32',
-				'text_color'        => '#FFFFFF',
-				'background_color'  => '#001529',
-				'accent_color'      => '#32CD32',
-				'section_padding'   => '4rem 0',
-				'heading_size'      => '2.25rem',
-				'gap'               => '2rem',
-				'radius'            => '0px',
-			),
-			$parsed['design_tokens']
+
+		$defaults = array(
+			'primary_color'    => '#2563eb',
+			'text_color'       => '#1e293b',
+			'background_color' => '#f0f9ff',
+			'accent_color'     => '#2563eb',
+			'section_padding'  => '3rem 0',
+			'heading_size'     => '2rem',
+			'gap'              => '1.5rem',
+			'radius'           => '8px',
 		);
 
-		$parsed['layout_structure'] = array(
+		if ( 'slider' === $intent ) {
+			$defaults['background_color'] = '#001529';
+			$defaults['text_color']       = '#FFFFFF';
+			$defaults['primary_color']    = '#32CD32';
+		}
+
+		$parsed['design_tokens'] = array_merge( $defaults, $parsed['design_tokens'] );
+
+		return $parsed;
+	}
+
+	/**
+	 * Detect intended layout from AI output + prompt.
+	 *
+	 * @param array  $parsed       Spec.
+	 * @param array  $block_config Block config.
+	 * @param string $prompt       Prompt.
+	 * @return string
+	 */
+	protected function detect_layout_intent( $parsed, $block_config, $prompt = '' ) {
+		$layout   = strtolower( (string) ( $parsed['layout'] ?? 'content' ) );
+		$js       = strtolower( (string) ( $parsed['javascript_type'] ?? '' ) );
+		$prompt_l = strtolower(
+			$prompt . ' ' .
+			( $parsed['purpose'] ?? '' ) . ' ' .
+			( $parsed['layout_details'] ?? '' ) . ' ' .
+			( $block_config['name'] ?? '' ) . ' ' .
+			( $block_config['description'] ?? '' )
+		);
+
+		$is_cta = (
+			in_array( $layout, array( 'cta', 'banner' ), true )
+			|| false !== strpos( $prompt_l, 'webinar' )
+			|| false !== strpos( $prompt_l, 'speaker' )
+			|| false !== strpos( $prompt_l, 'call to action' )
+			|| false !== strpos( $prompt_l, ' be a ' )
+			|| ( false !== strpos( $prompt_l, 'button' ) && false !== strpos( $prompt_l, 'title' ) )
+			|| ( false !== strpos( $prompt_l, 'banner' ) && false === strpos( $prompt_l, 'slider' ) )
+		);
+
+		$is_slider = (
+			in_array( $layout, array( 'slider', 'carousel' ), true )
+			|| 'slider' === $js
+			|| false !== strpos( $prompt_l, 'swiper' )
+			|| false !== strpos( $prompt_l, 'carousel' )
+			|| ( false !== strpos( $prompt_l, 'slider' ) && false === strpos( $prompt_l, 'mobile slider' ) )
+			|| false !== strpos( $prompt_l, 'case study' )
+			|| false !== strpos( $prompt_l, 'focus area' )
+		);
+
+		$is_team = (
+			in_array( $layout, array( 'team' ), true )
+			|| false !== strpos( $prompt_l, 'team member' )
+			|| false !== strpos( $prompt_l, 'our team' )
+			|| false !== strpos( $prompt_l, 'core team' )
+		);
+
+		$is_grid = (
+			in_array( $layout, array( 'grid' ), true )
+			|| false !== strpos( $prompt_l, 'grid' )
+			|| false !== strpos( $prompt_l, 'cards' )
+			|| false !== strpos( $prompt_l, 'features' )
+		);
+
+		$is_hero = (
+			in_array( $layout, array( 'hero' ), true )
+			|| false !== strpos( $prompt_l, 'hero' )
+		);
+
+		if ( $is_cta && ! $is_slider ) {
+			return 'cta';
+		}
+		if ( $is_slider && ! $is_cta ) {
+			return 'slider';
+		}
+		if ( $is_team ) {
+			return 'team';
+		}
+		if ( $is_grid ) {
+			return 'grid';
+		}
+		if ( $is_hero ) {
+			return 'hero';
+		}
+		if ( in_array( $layout, array( 'two-column', 'hero', 'cta' ), true ) ) {
+			return $layout;
+		}
+
+		return 'two-column';
+	}
+
+	/**
+	 * Prefix all field names consistently.
+	 *
+	 * @param array  $fields Field tree.
+	 * @param string $prefix Slug prefix.
+	 * @return array
+	 */
+	protected function apply_field_prefix( $fields, $prefix, $nested = false ) {
+		$clean = array();
+
+		foreach ( (array) $fields as $field ) {
+			if ( ! is_array( $field ) ) {
+				continue;
+			}
+
+			if ( ! $nested && ! empty( $field['name'] ) ) {
+				$name = \AABG\Utils\Sanitizer::field_name( $field['name'] );
+				if ( 0 !== strpos( $name, $prefix . '_' ) ) {
+					$name = $prefix . '_' . preg_replace( '/^' . preg_quote( $prefix, '/' ) . '_?/', '', $name );
+				}
+				$field['name'] = $name;
+			}
+
+			if ( ! empty( $field['sub_fields'] ) ) {
+				$field['sub_fields'] = $this->apply_field_prefix( $field['sub_fields'], $prefix, true );
+			}
+
+			if ( ! empty( $field['layouts'] ) && is_array( $field['layouts'] ) ) {
+				foreach ( $field['layouts'] as &$layout ) {
+					if ( ! empty( $layout['sub_fields'] ) ) {
+						$layout['sub_fields'] = $this->apply_field_prefix( $layout['sub_fields'], $prefix, true );
+					}
+				}
+				unset( $layout );
+			}
+
+			$clean[] = $field;
+		}
+
+		return $clean;
+	}
+
+	/**
+	 * Copy placeholder_content into field default_value when empty.
+	 *
+	 * @param array $fields       Fields.
+	 * @param array $placeholders Placeholder map.
+	 * @return array
+	 */
+	protected function apply_default_values_from_placeholders( $fields, $placeholders ) {
+		if ( ! is_array( $placeholders ) ) {
+			$placeholders = array();
+		}
+
+		foreach ( $fields as &$field ) {
+			$name = $field['name'] ?? '';
+			if ( $name && empty( $field['default_value'] ) && isset( $placeholders[ $name ] ) ) {
+				$field['default_value'] = $placeholders[ $name ];
+			}
+			if ( ! empty( $field['sub_fields'] ) ) {
+				$field['sub_fields'] = $this->apply_default_values_from_placeholders( $field['sub_fields'], $placeholders );
+			}
+		}
+		unset( $field );
+
+		return $fields;
+	}
+
+	/**
+	 * CTA / banner two-column fields (image + headline + button).
+	 *
+	 * @param string $prefix Prefix.
+	 * @return array
+	 */
+	protected function build_cta_two_column_fields( $prefix ) {
+		return array(
+			array(
+				'label' => 'Illustration / Image',
+				'name'  => $prefix . '_illustration',
+				'type'  => 'image',
+			),
+			array(
+				'label'         => 'Title',
+				'name'          => $prefix . '_title',
+				'type'          => 'text',
+				'default_value' => 'Ready to Be Our Next Webinar Speaker & Inspire the Next Generation?',
+			),
+			array(
+				'label' => 'Description',
+				'name'  => $prefix . '_description',
+				'type'  => 'textarea',
+				'new_lines' => 'br',
+			),
+			array(
+				'label'         => 'Button',
+				'name'          => $prefix . '_button',
+				'type'          => 'link',
+				'default_value' => array(
+					'title'  => 'Be a Speaker',
+					'url'    => '#',
+					'target' => '',
+				),
+			),
+		);
+	}
+
+	/**
+	 * Generic two-column content fields.
+	 *
+	 * @param string $prefix Prefix.
+	 * @return array
+	 */
+	protected function build_two_column_content_fields( $prefix ) {
+		return array(
+			array( 'label' => 'Title', 'name' => $prefix . '_title', 'type' => 'text' ),
+			array( 'label' => 'Subtitle', 'name' => $prefix . '_subtitle', 'type' => 'text' ),
+			array( 'label' => 'Description', 'name' => $prefix . '_description', 'type' => 'textarea', 'new_lines' => 'br' ),
+			array( 'label' => 'Button', 'name' => $prefix . '_button', 'type' => 'link' ),
+			array( 'label' => 'Image', 'name' => $prefix . '_image', 'type' => 'image' ),
+		);
+	}
+
+	/**
+	 * Hero section fields.
+	 *
+	 * @param string $prefix Prefix.
+	 * @return array
+	 */
+	protected function build_hero_content_fields( $prefix ) {
+		return array(
+			array( 'label' => 'Title', 'name' => $prefix . '_title', 'type' => 'text' ),
+			array( 'label' => 'Subtitle', 'name' => $prefix . '_subtitle', 'type' => 'text' ),
+			array( 'label' => 'Description', 'name' => $prefix . '_description', 'type' => 'textarea', 'new_lines' => 'br' ),
+			array( 'label' => 'Primary Button', 'name' => $prefix . '_primary_button', 'type' => 'link' ),
+			array( 'label' => 'Side Image', 'name' => $prefix . '_side_image', 'type' => 'image' ),
+		);
+	}
+
+	/**
+	 * Grid / cards repeater fields.
+	 *
+	 * @param string $prefix Prefix.
+	 * @return array
+	 */
+	protected function build_grid_cards_fields( $prefix ) {
+		return array(
+			array(
+				'label'         => 'Section Title',
+				'name'          => $prefix . '_section_title',
+				'type'          => 'text',
+				'default_value' => 'Features',
+			),
+			array(
+				'label'        => 'Cards',
+				'name'         => $prefix . '_cards',
+				'type'         => 'repeater',
+				'layout'       => 'block',
+				'button_label' => 'Add Card',
+				'sub_fields'   => array(
+					array( 'label' => 'Image', 'name' => 'image', 'type' => 'image' ),
+					array( 'label' => 'Title', 'name' => 'title', 'type' => 'text' ),
+					array( 'label' => 'Description', 'name' => 'description', 'type' => 'textarea', 'new_lines' => 'br' ),
+					array( 'label' => 'Link', 'name' => 'link', 'type' => 'link' ),
+				),
+			),
+		);
+	}
+
+	/**
+	 * Team mosaic fields (desktop grid + mobile slider).
+	 *
+	 * @param string $prefix Prefix.
+	 * @return array
+	 */
+	protected function build_team_mosaic_fields( $prefix ) {
+		return array(
+			array( 'label' => 'Eyebrow', 'name' => $prefix . '_eyebrow', 'type' => 'text', 'default_value' => '/ OUR TEAM /' ),
+			array( 'label' => 'Title', 'name' => $prefix . '_section_title', 'type' => 'text' ),
+			array( 'label' => 'Description', 'name' => $prefix . '_description', 'type' => 'textarea', 'new_lines' => 'br' ),
+			array( 'label' => 'CTA Link', 'name' => $prefix . '_link', 'type' => 'link' ),
+			array(
+				'label'        => 'Team Members',
+				'name'         => $prefix . '_team_members',
+				'type'         => 'repeater',
+				'button_label' => 'Add Member',
+				'sub_fields'   => array(
+					array( 'label' => 'Photo', 'name' => 'image', 'type' => 'image' ),
+					array( 'label' => 'Name', 'name' => 'name', 'type' => 'text' ),
+					array( 'label' => 'Designation', 'name' => 'designation', 'type' => 'text' ),
+				),
+			),
+			array( 'label' => 'Autoplay (mobile)', 'name' => $prefix . '_autoplay', 'type' => 'true_false', 'default_value' => 1, 'ui' => 1 ),
+			array( 'label' => 'Show Arrows (mobile)', 'name' => $prefix . '_show_navigation', 'type' => 'true_false', 'default_value' => 1, 'ui' => 1 ),
+			array( 'label' => 'Show Dots (mobile)', 'name' => $prefix . '_pagination', 'type' => 'true_false', 'default_value' => 1, 'ui' => 1 ),
+		);
+	}
+
+	/**
+	 * Build two-column layout_structure.
+	 *
+	 * @param array $left  Left column field names.
+	 * @param array $right Right column field names.
+	 * @return array
+	 */
+	protected function build_two_column_structure( $left, $right ) {
+		return array(
 			'grid_system' => 'theme',
 			'rows'        => array(
 				array(
 					'align'   => 'center',
 					'columns' => array(
 						array(
+							'width'      => '50%',
+							'cell_class' => 'cell-md-6',
+							'fields'     => array_values( $left ),
+							'class'      => 'col-left',
+						),
+						array(
+							'width'      => '50%',
+							'cell_class' => 'cell-md-6',
+							'fields'     => array_values( $right ),
+							'class'      => 'col-right',
+						),
+					),
+				),
+			),
+		);
+	}
+
+	/**
+	 * Full-width single column structure.
+	 *
+	 * @param string $field_name Field name.
+	 * @return array
+	 */
+	protected function build_full_width_structure( $field_name ) {
+		return array(
+			'grid_system' => 'theme',
+			'rows'        => array(
+				array(
+					'columns' => array(
+						array(
 							'width'      => '100%',
 							'cell_class' => 'cell-12',
-							'fields'     => array( $prefix . '_slides' ),
+							'fields'     => array( $field_name ),
 							'class'      => 'col-full',
 						),
 					),
 				),
 			),
 		);
-
-		$parsed['enriched'] = 'case_study_slider';
-
-		return $parsed;
 	}
 
 	/**

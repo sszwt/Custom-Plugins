@@ -74,9 +74,9 @@ class Gemini_Provider {
 		$parts = array(
 			array( 'text' => $text ),
 			array(
-				'inline_data' => array(
-					'mime_type' => $prepared['mime'],
-					'data'      => base64_encode( $contents ),
+				'inlineData' => array(
+					'mimeType' => $prepared['mime'],
+					'data'     => base64_encode( $contents ),
 				),
 			),
 		);
@@ -122,8 +122,8 @@ class Gemini_Provider {
 				),
 			),
 			'generationConfig' => array(
-				'temperature'     => 0.3,
-				'maxOutputTokens' => 4096,
+				'temperature'     => 0.2,
+				'maxOutputTokens' => 8192,
 				'responseMimeType'=> 'application/json',
 			),
 		);
