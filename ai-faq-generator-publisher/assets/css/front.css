@@ -1,0 +1,123 @@
+/* AI FAQ — Frontend accordion (slide up / down) */
+.aifaq {
+	--aifaq-f-ink: #14161c;
+	--aifaq-f-muted: #5c6478;
+	--aifaq-f-line: rgba(20, 22, 28, 0.12);
+	--aifaq-f-surface: #f7f6f2;
+	--aifaq-f-accent: #2f6fed;
+	--aifaq-f-radius: 14px;
+	--aifaq-f-ease: cubic-bezier(0.22, 1, 0.36, 1);
+	max-width: 760px;
+	margin: 0 auto;
+	color: var(--aifaq-f-ink);
+	font-family: inherit;
+}
+
+.aifaq__heading {
+	margin: 0 0 1.25rem;
+	font-size: clamp(1.5rem, 2.4vw, 2rem);
+	font-weight: 700;
+	letter-spacing: -0.02em;
+	line-height: 1.2;
+}
+
+.aifaq__list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.65rem;
+}
+
+.aifaq__item {
+	border: 1px solid var(--aifaq-f-line);
+	border-radius: var(--aifaq-f-radius);
+	background: var(--aifaq-f-surface);
+	overflow: hidden;
+	transition: border-color 0.25s var(--aifaq-f-ease), box-shadow 0.25s var(--aifaq-f-ease);
+}
+
+.aifaq__item.is-open {
+	border-color: rgba(47, 111, 237, 0.35);
+	box-shadow: 0 10px 28px rgba(20, 22, 28, 0.06);
+}
+
+.aifaq__trigger {
+	appearance: none;
+	width: 100%;
+	border: 0;
+	background: transparent;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	padding: 1.05rem 1.15rem;
+	text-align: left;
+	cursor: pointer;
+	color: inherit;
+	font: inherit;
+}
+
+.aifaq__q {
+	font-size: 1.02rem;
+	font-weight: 650;
+	line-height: 1.35;
+	letter-spacing: -0.01em;
+}
+
+.aifaq__icon {
+	flex-shrink: 0;
+	width: 32px;
+	height: 32px;
+	border-radius: 999px;
+	display: grid;
+	place-items: center;
+	background: rgba(47, 111, 237, 0.1);
+	color: var(--aifaq-f-accent);
+	transition: transform 0.35s var(--aifaq-f-ease), background 0.25s ease;
+}
+
+.aifaq__item.is-open .aifaq__icon {
+	transform: rotate(180deg);
+	background: rgba(47, 111, 237, 0.18);
+}
+
+.aifaq__panel {
+	display: grid;
+	grid-template-rows: 0fr;
+	transition: grid-template-rows 0.4s var(--aifaq-f-ease);
+}
+
+.aifaq__item.is-open .aifaq__panel {
+	grid-template-rows: 1fr;
+}
+
+.aifaq__panel[hidden] {
+	display: grid;
+}
+
+.aifaq__panel-inner {
+	overflow: hidden;
+	min-height: 0;
+}
+
+.aifaq__a {
+	padding: 0 1.15rem 1.15rem;
+	color: var(--aifaq-f-muted);
+	font-size: 0.98rem;
+	line-height: 1.65;
+}
+
+.aifaq__a p {
+	margin: 0 0 0.75em;
+}
+
+.aifaq__a p:last-child {
+	margin-bottom: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.aifaq__panel,
+	.aifaq__icon,
+	.aifaq__item {
+		transition: none;
+	}
+}

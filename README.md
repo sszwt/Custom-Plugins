@@ -7,8 +7,10 @@ WordPress custom plugins (source folders).
 | Plugin | Folder |
 |--------|--------|
 | AI ACF Block Generator | `ai-acf-block-generator` |
+| AI FAQ Generator & Publisher | `ai-faq-generator-publisher` |
 | AI Image Alt Text Generator | `ai-image-alt-text-generator` |
 | AI Image Optimization | `ai-image-optimization` |
+| CPT Filter & Load More | `cpt-filter-load-more` |
 | Frontend Block Visibility Control | `frontend-block-visibility-control` |
 
 ## Install
